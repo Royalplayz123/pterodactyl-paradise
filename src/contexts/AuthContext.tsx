@@ -68,6 +68,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Sync admin status on session restore (not just sign-in)
+      if (session) {
+        setTimeout(async () => {
+          try {
+            await supabase.functions.invoke('pterodactyl-api', {
+              body: { action: 'sync_admin_status' },
+            });
+          } catch (err) {
+            console.warn('Admin sync on restore failed:', err);
+          }
+        }, 0);
+      }
     });
 
     return () => subscription.unsubscribe();
