@@ -31,16 +31,16 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
 
     const PANEL_URL = Deno.env.get("PTERODACTYL_PANEL_URL")!.replace(/\/$/, "");
     const API_KEY = Deno.env.get("PTERODACTYL_API_KEY")!;
@@ -250,17 +250,21 @@ Deno.serve(async (req) => {
       // ===== AUTH SYNC ACTIONS =====
       case "register_panel_user": {
         const { email: regEmail, username: regUsername, password: regPassword } = params as any;
+        console.log("Registering panel user:", regEmail, regUsername);
+        
         // Create user on Pterodactyl panel
         const newUser = await pteroFetch("/users", {
           method: "POST",
           body: JSON.stringify({
-            username: regUsername || regEmail.split("@")[0],
+            username: (regUsername || regEmail.split("@")[0]).replace(/[^a-zA-Z0-9_.-]/g, ''),
             email: regEmail,
             first_name: regUsername || regEmail.split("@")[0],
             last_name: "User",
             password: regPassword,
           }),
         });
+        console.log("Panel user created:", JSON.stringify(newUser));
+        
         const pteroUserId = newUser?.attributes?.id;
         if (pteroUserId) {
           // Save pterodactyl_id to profile
@@ -272,6 +276,7 @@ Deno.serve(async (req) => {
             .from("profiles")
             .update({ pterodactyl_id: pteroUserId })
             .eq("id", userId);
+          console.log("Saved pterodactyl_id:", pteroUserId, "for user:", userId);
         }
         result = { success: true, pterodactyl_id: pteroUserId };
         break;
