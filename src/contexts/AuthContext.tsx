@@ -31,29 +31,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Fire-and-forget panel sync on sign-in (no await to prevent deadlocks)
       if (event === 'SIGNED_IN' && session) {
-        setTimeout(() => {
-          supabase
-            .from('profiles')
-            .select('pterodactyl_id')
-            .eq('id', session.user.id)
-            .maybeSingle()
-            .then(({ data: profile }) => {
-              if (!profile?.pterodactyl_id) {
-                supabase.functions.invoke('pterodactyl-api', {
-                  body: {
-                    action: 'register_panel_user',
-                    email: session.user.email,
-                    username: session.user.email?.split('@')[0],
-                    password: crypto.randomUUID(),
-                  },
-                }).catch(err => console.warn('Panel registration failed:', err));
-              }
-            })
-            .catch(err => console.warn('Profile check failed:', err));
+        setTimeout(async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('pterodactyl_id')
+              .eq('id', session.user.id)
+              .maybeSingle();
 
-          supabase.functions.invoke('pterodactyl-api', {
-            body: { action: 'sync_admin_status' },
-          }).catch(err => console.warn('Admin sync failed:', err));
+            if (!profile?.pterodactyl_id) {
+              await supabase.functions.invoke('pterodactyl-api', {
+                body: {
+                  action: 'register_panel_user',
+                  email: session.user.email,
+                  username: session.user.email?.split('@')[0],
+                  password: crypto.randomUUID(),
+                },
+              });
+            }
+          } catch (err) {
+            console.warn('Panel registration failed:', err);
+          }
+
+          try {
+            await supabase.functions.invoke('pterodactyl-api', {
+              body: { action: 'sync_admin_status' },
+            });
+          } catch (err) {
+            console.warn('Admin sync failed:', err);
+          }
         }, 0);
       }
     });
