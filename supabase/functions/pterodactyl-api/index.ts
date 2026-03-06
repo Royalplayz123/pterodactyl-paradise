@@ -250,17 +250,21 @@ Deno.serve(async (req) => {
       // ===== AUTH SYNC ACTIONS =====
       case "register_panel_user": {
         const { email: regEmail, username: regUsername, password: regPassword } = params as any;
+        console.log("Registering panel user:", regEmail, regUsername);
+        
         // Create user on Pterodactyl panel
         const newUser = await pteroFetch("/users", {
           method: "POST",
           body: JSON.stringify({
-            username: regUsername || regEmail.split("@")[0],
+            username: (regUsername || regEmail.split("@")[0]).replace(/[^a-zA-Z0-9_.-]/g, ''),
             email: regEmail,
             first_name: regUsername || regEmail.split("@")[0],
             last_name: "User",
             password: regPassword,
           }),
         });
+        console.log("Panel user created:", JSON.stringify(newUser));
+        
         const pteroUserId = newUser?.attributes?.id;
         if (pteroUserId) {
           // Save pterodactyl_id to profile
@@ -272,6 +276,7 @@ Deno.serve(async (req) => {
             .from("profiles")
             .update({ pterodactyl_id: pteroUserId })
             .eq("id", userId);
+          console.log("Saved pterodactyl_id:", pteroUserId, "for user:", userId);
         }
         result = { success: true, pterodactyl_id: pteroUserId };
         break;
