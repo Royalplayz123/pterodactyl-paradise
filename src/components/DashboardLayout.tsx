@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useIsAdmin } from '@/hooks/useProfile';
 import { useAdminSync } from '@/hooks/useAdminSync';
@@ -14,6 +15,7 @@ const DashboardLayout = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const isAdmin = useIsAdmin();
+  const queryClient = useQueryClient();
   const { syncAdminStatus } = useAdminSync();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
