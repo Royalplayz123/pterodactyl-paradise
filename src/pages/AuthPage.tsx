@@ -90,7 +90,11 @@ const AuthPage = () => {
       if (result?.redirected) return;
       if (result?.error) {
         toast.error(result.error.message || 'Google login failed');
+        return;
       }
+      // If we got tokens set directly (no redirect), sync and navigate
+      await syncWithPanel();
+      navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || 'Google login failed');
     } finally {
