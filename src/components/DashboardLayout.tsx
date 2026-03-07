@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useIsAdmin } from '@/hooks/useProfile';
+import { useAdminSync } from '@/hooks/useAdminSync';
 import {
   Server, ShoppingCart, Ticket, Shield, LogOut,
-  Home, Coins, User, Menu, X
+  Home, Coins, User, Menu, X, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 const DashboardLayout = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const isAdmin = useIsAdmin();
+  const { syncAdminStatus } = useAdminSync();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      await syncAdminStatus();
+      toast.success('Admin status synced!');
+    } catch {
+      toast.error('Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard', end: true, show: true },
