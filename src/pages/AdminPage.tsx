@@ -4,12 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import {
   Shield, Users, Ticket, Plus, Trash2, AlertTriangle,
   Server, BarChart3, Settings, Ban, CheckCircle2, Search,
   Coins, MemoryStick, Cpu, HardDrive, Eye, UserPlus, ServerCrash,
-  Activity, TrendingUp, Globe
+  Activity, TrendingUp, Globe, Zap, Save
 } from 'lucide-react';
+import { useAppSetting, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
 import { useIsAdmin } from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
@@ -574,62 +576,115 @@ const AdminPage = () => {
 
         {/* ===== SETTINGS TAB ===== */}
         <TabsContent value="settings">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Settings className="w-5 h-5 text-primary" /> Panel Connection
-              </h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                  <span className="text-sm text-muted-foreground">Panel URL</span>
-                  <span className="text-sm font-medium text-success flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Connected
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                  <span className="text-sm text-muted-foreground">API Key</span>
-                  <span className="text-sm font-medium text-success flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Configured
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                  <span className="text-sm text-muted-foreground">Panel Version</span>
-                  <span className="text-sm font-medium text-foreground">Pterodactyl v1.x</span>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                To update your panel URL or API key, update the secrets in your project settings.
-              </p>
-            </div>
-
-            <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-accent" /> Default Resources
-              </h2>
-              <p className="text-sm text-muted-foreground">Resources given to new users on signup.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-secondary text-center">
-                  <p className="text-lg font-bold text-foreground">1024 MB</p>
-                  <p className="text-xs text-muted-foreground">RAM</p>
-                </div>
-                <div className="p-3 rounded-lg bg-secondary text-center">
-                  <p className="text-lg font-bold text-foreground">100%</p>
-                  <p className="text-xs text-muted-foreground">CPU</p>
-                </div>
-                <div className="p-3 rounded-lg bg-secondary text-center">
-                  <p className="text-lg font-bold text-foreground">5120 MB</p>
-                  <p className="text-xs text-muted-foreground">Disk</p>
-                </div>
-                <div className="p-3 rounded-lg bg-secondary text-center">
-                  <p className="text-lg font-bold text-foreground">1</p>
-                  <p className="text-xs text-muted-foreground">Server Slots</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">Edit the handle_new_user function in your database to change defaults.</p>
-            </div>
-          </div>
+          <SettingsTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+const SettingsTab = () => {
+  const { data: defaultRes, isLoading: resLoading } = useAppSetting('default_resources');
+  const { data: afkConfig, isLoading: afkLoading } = useAppSetting('afk_rewards');
+  const updateSetting = useUpdateAppSetting();
+
+  const [res, setRes] = useState({ coins: 100, ram: 1024, cpu: 100, disk: 5120, server_slots: 1 });
+  const [afk, setAfk] = useState({ enabled: true, coins_per_interval: 1, interval_seconds: 60 });
+
+  useEffect(() => {
+    if (defaultRes) setRes(defaultRes);
+  }, [defaultRes]);
+
+  useEffect(() => {
+    if (afkConfig) setAfk(afkConfig);
+  }, [afkConfig]);
+
+  const saveResources = () => updateSetting.mutate({ key: 'default_resources', value: res });
+  const saveAfk = () => updateSetting.mutate({ key: 'afk_rewards', value: afk });
+
+  if (resLoading || afkLoading) {
+    return <div className="text-center py-12 text-muted-foreground">Loading settings...</div>;
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      {/* Panel Connection */}
+      <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Settings className="w-5 h-5 text-primary" /> Panel Connection
+        </h2>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+            <span className="text-sm text-muted-foreground">Panel URL</span>
+            <span className="text-sm font-medium text-success flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Connected
+            </span>
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+            <span className="text-sm text-muted-foreground">API Key</span>
+            <span className="text-sm font-medium text-success flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Configured
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Default Resources - Editable */}
+      <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Cpu className="w-5 h-5 text-accent" /> Default Resources
+        </h2>
+        <p className="text-sm text-muted-foreground">Resources given to new users on signup.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Coins</Label>
+            <Input type="number" value={res.coins} onChange={(e) => setRes({ ...res, coins: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">RAM (MB)</Label>
+            <Input type="number" value={res.ram} onChange={(e) => setRes({ ...res, ram: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">CPU (%)</Label>
+            <Input type="number" value={res.cpu} onChange={(e) => setRes({ ...res, cpu: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Disk (MB)</Label>
+            <Input type="number" value={res.disk} onChange={(e) => setRes({ ...res, disk: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Server Slots</Label>
+            <Input type="number" value={res.server_slots} onChange={(e) => setRes({ ...res, server_slots: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+        </div>
+        <Button variant="glow" className="w-full" onClick={saveResources} disabled={updateSetting.isPending}>
+          <Save className="w-4 h-4 mr-2" /> Save Default Resources
+        </Button>
+      </div>
+
+      {/* AFK Reward Settings */}
+      <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4 lg:col-span-2">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Zap className="w-5 h-5 text-warning" /> AFK Reward Settings
+        </h2>
+        <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+          <span className="text-sm text-foreground">Enable AFK Rewards</span>
+          <Switch checked={afk.enabled} onCheckedChange={(checked) => setAfk({ ...afk, enabled: checked })} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Coins per Interval</Label>
+            <Input type="number" value={afk.coins_per_interval} onChange={(e) => setAfk({ ...afk, coins_per_interval: parseInt(e.target.value) || 1 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Interval (seconds)</Label>
+            <Input type="number" value={afk.interval_seconds} onChange={(e) => setAfk({ ...afk, interval_seconds: parseInt(e.target.value) || 60 })} className="bg-secondary border-border" min={10} />
+          </div>
+        </div>
+        <Button variant="glow" className="w-full" onClick={saveAfk} disabled={updateSetting.isPending}>
+          <Save className="w-4 h-4 mr-2" /> Save AFK Settings
+        </Button>
+      </div>
     </div>
   );
 };

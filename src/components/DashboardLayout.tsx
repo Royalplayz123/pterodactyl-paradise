@@ -6,7 +6,7 @@ import { useProfile, useIsAdmin } from '@/hooks/useProfile';
 import { useAdminSync } from '@/hooks/useAdminSync';
 import {
   Server, ShoppingCart, Ticket, Shield, LogOut,
-  Home, Coins, User, Menu, X, RefreshCw
+  Home, Coins, User, Menu, X, RefreshCw, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -44,6 +44,7 @@ const DashboardLayout = () => {
     { to: '/dashboard/servers', icon: Server, label: 'Servers', show: true },
     { to: '/dashboard/shop', icon: ShoppingCart, label: 'Shop', show: true },
     { to: '/dashboard/coupons', icon: Ticket, label: 'Coupons', show: true },
+    { to: '/dashboard/afk', icon: Zap, label: 'AFK', show: true },
     { to: '/dashboard/admin', icon: Shield, label: 'Admin', show: isAdmin },
   ];
 
