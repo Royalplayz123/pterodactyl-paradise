@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useIsAdmin } from '@/hooks/useProfile';
 import { useAdminSync } from '@/hooks/useAdminSync';
@@ -14,6 +15,7 @@ const DashboardLayout = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const isAdmin = useIsAdmin();
+  const queryClient = useQueryClient();
   const { syncAdminStatus } = useAdminSync();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,8 +24,14 @@ const DashboardLayout = () => {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
+      // Sync admin status from panel
       await syncAdminStatus();
-      toast.success('Admin status synced!');
+      // Also refresh all dashboard data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user_resources', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['servers', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user_roles', user?.id] });
+      toast.success('Dashboard refreshed!');
     } catch {
       toast.error('Sync failed');
     } finally {
