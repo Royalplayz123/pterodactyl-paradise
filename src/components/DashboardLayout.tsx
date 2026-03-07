@@ -22,8 +22,14 @@ const DashboardLayout = () => {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
+      // Sync admin status from panel
       await syncAdminStatus();
-      toast.success('Admin status synced!');
+      // Also refresh all dashboard data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user_resources', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['servers', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user_roles', user?.id] });
+      toast.success('Dashboard refreshed!');
     } catch {
       toast.error('Sync failed');
     } finally {
