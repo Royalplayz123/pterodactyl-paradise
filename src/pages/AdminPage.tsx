@@ -193,6 +193,9 @@ const AdminPage = () => {
           <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <Settings className="w-4 h-4" /> Settings
           </TabsTrigger>
+          <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <ShoppingCart className="w-4 h-4" /> Shop
+          </TabsTrigger>
         </TabsList>
 
         {/* ===== ANALYTICS TAB ===== */}
@@ -577,6 +580,11 @@ const AdminPage = () => {
         {/* ===== SETTINGS TAB ===== */}
         <TabsContent value="settings">
           <SettingsTab />
+        </TabsContent>
+
+        {/* ===== SHOP TAB ===== */}
+        <TabsContent value="shop">
+          <ShopManagementTab />
         </TabsContent>
       </Tabs>
     </div>
