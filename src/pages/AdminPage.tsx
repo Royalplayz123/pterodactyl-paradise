@@ -9,7 +9,7 @@ import {
   Shield, Users, Ticket, Plus, Trash2, AlertTriangle,
   Server, BarChart3, Settings, Ban, CheckCircle2, Search,
   Coins, MemoryStick, Cpu, HardDrive, Eye, UserPlus, ServerCrash,
-  Activity, TrendingUp, Globe, Zap, Save
+  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil
 } from 'lucide-react';
 import { useAppSetting, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
