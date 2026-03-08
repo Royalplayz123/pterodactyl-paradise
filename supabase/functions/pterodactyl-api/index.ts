@@ -252,31 +252,44 @@ Deno.serve(async (req) => {
         const { email: regEmail, username: regUsername, password: regPassword } = params as any;
         console.log("Registering panel user:", regEmail, regUsername);
         
-        // Create user on Pterodactyl panel
-        const newUser = await pteroFetch("/users", {
-          method: "POST",
-          body: JSON.stringify({
-            username: (regUsername || regEmail.split("@")[0]).replace(/[^a-zA-Z0-9_.-]/g, ''),
-            email: regEmail,
-            first_name: regUsername || regEmail.split("@")[0],
-            last_name: "User",
-            password: regPassword,
-          }),
-        });
-        console.log("Panel user created:", JSON.stringify(newUser));
-        
-        const pteroUserId = newUser?.attributes?.id;
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+
+        let pteroUserId: number | null = null;
+
+        try {
+          // Try creating user on Pterodactyl panel
+          const newUser = await pteroFetch("/users", {
+            method: "POST",
+            body: JSON.stringify({
+              username: (regUsername || regEmail.split("@")[0]).replace(/[^a-zA-Z0-9_.-]/g, ''),
+              email: regEmail,
+              first_name: regUsername || regEmail.split("@")[0],
+              last_name: "User",
+              password: regPassword,
+            }),
+          });
+          pteroUserId = newUser?.attributes?.id;
+          console.log("Panel user created:", pteroUserId);
+        } catch (err: any) {
+          // If user already exists (422), look them up by email
+          if (err.message?.includes("422")) {
+            console.log("User already exists on panel, looking up by email");
+            const searchData = await pteroFetch(`/users?filter[email]=${encodeURIComponent(regEmail)}`);
+            pteroUserId = searchData?.data?.[0]?.attributes?.id || null;
+            console.log("Found existing panel user:", pteroUserId);
+          } else {
+            throw err;
+          }
+        }
+
         if (pteroUserId) {
-          // Save pterodactyl_id to profile
-          const adminClient = createClient(
-            Deno.env.get("SUPABASE_URL")!,
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-          );
           await adminClient
             .from("profiles")
             .update({ pterodactyl_id: pteroUserId })
             .eq("id", userId);
-          console.log("Saved pterodactyl_id:", pteroUserId, "for user:", userId);
         }
         result = { success: true, pterodactyl_id: pteroUserId };
         break;
