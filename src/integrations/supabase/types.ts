@@ -178,6 +178,51 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_items: {
+        Row: {
+          active: boolean
+          amount: number
+          color: string
+          created_at: string
+          description: string
+          display_amount: string
+          icon: string
+          id: string
+          name: string
+          price: number
+          resource: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          color?: string
+          created_at?: string
+          description?: string
+          display_amount?: string
+          icon?: string
+          id?: string
+          name: string
+          price?: number
+          resource?: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          color?: string
+          created_at?: string
+          description?: string
+          display_amount?: string
+          icon?: string
+          id?: string
+          name?: string
+          price?: number
+          resource?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           coins_change: number

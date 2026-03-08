@@ -9,7 +9,7 @@ import {
   Shield, Users, Ticket, Plus, Trash2, AlertTriangle,
   Server, BarChart3, Settings, Ban, CheckCircle2, Search,
   Coins, MemoryStick, Cpu, HardDrive, Eye, UserPlus, ServerCrash,
-  Activity, TrendingUp, Globe, Zap, Save
+  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil
 } from 'lucide-react';
 import { useAppSetting, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
@@ -192,6 +192,9 @@ const AdminPage = () => {
           </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <Settings className="w-4 h-4" /> Settings
+          </TabsTrigger>
+          <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <ShoppingCart className="w-4 h-4" /> Shop
           </TabsTrigger>
         </TabsList>
 
@@ -578,6 +581,11 @@ const AdminPage = () => {
         <TabsContent value="settings">
           <SettingsTab />
         </TabsContent>
+
+        {/* ===== SHOP TAB ===== */}
+        <TabsContent value="shop">
+          <ShopManagementTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -685,6 +693,242 @@ const SettingsTab = () => {
           <Save className="w-4 h-4 mr-2" /> Save AFK Settings
         </Button>
       </div>
+    </div>
+  );
+};
+
+const ShopManagementTab = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [showAdd, setShowAdd] = useState(false);
+
+  // Form state
+  const [formName, setFormName] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  const [formIcon, setFormIcon] = useState('server');
+  const [formPrice, setFormPrice] = useState('');
+  const [formResource, setFormResource] = useState('ram');
+  const [formAmount, setFormAmount] = useState('');
+  const [formDisplay, setFormDisplay] = useState('');
+  const [formColor, setFormColor] = useState('text-primary');
+  const [formOrder, setFormOrder] = useState('0');
+
+  const loadItems = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('shop_items').select('*').order('sort_order', { ascending: true });
+    if (data) setItems(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadItems(); }, []);
+
+  const resetForm = () => {
+    setFormName(''); setFormDesc(''); setFormIcon('server'); setFormPrice('');
+    setFormResource('ram'); setFormAmount(''); setFormDisplay(''); setFormColor('text-primary'); setFormOrder('0');
+  };
+
+  const openEdit = (item: any) => {
+    setEditItem(item);
+    setFormName(item.name);
+    setFormDesc(item.description);
+    setFormIcon(item.icon);
+    setFormPrice(String(item.price));
+    setFormResource(item.resource);
+    setFormAmount(String(item.amount));
+    setFormDisplay(item.display_amount);
+    setFormColor(item.color);
+    setFormOrder(String(item.sort_order));
+    setShowAdd(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: formName,
+      description: formDesc,
+      icon: formIcon,
+      price: parseInt(formPrice) || 0,
+      resource: formResource,
+      amount: parseInt(formAmount) || 0,
+      display_amount: formDisplay,
+      color: formColor,
+      sort_order: parseInt(formOrder) || 0,
+    };
+
+    try {
+      if (editItem) {
+        const { error } = await supabase.from('shop_items').update(payload).eq('id', editItem.id);
+        if (error) throw error;
+        toast.success('Item updated!');
+        setEditItem(null);
+      } else {
+        const { error } = await supabase.from('shop_items').insert(payload);
+        if (error) throw error;
+        toast.success('Item created!');
+        setShowAdd(false);
+      }
+      resetForm();
+      loadItems();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this shop item?')) return;
+    const { error } = await supabase.from('shop_items').delete().eq('id', id);
+    if (error) toast.error(error.message);
+    else { toast.success('Item deleted'); loadItems(); }
+  };
+
+  const handleToggle = async (id: string, active: boolean) => {
+    const { error } = await supabase.from('shop_items').update({ active: !active }).eq('id', id);
+    if (error) toast.error(error.message);
+    else loadItems();
+  };
+
+  const iconOptions = [
+    { value: 'memory-stick', label: 'RAM' },
+    { value: 'cpu', label: 'CPU' },
+    { value: 'hard-drive', label: 'Disk' },
+    { value: 'server', label: 'Server' },
+    { value: 'zap', label: 'Zap' },
+  ];
+
+  const resourceOptions = [
+    { value: 'ram', label: 'RAM' },
+    { value: 'cpu', label: 'CPU' },
+    { value: 'disk', label: 'Disk' },
+    { value: 'server_slots', label: 'Server Slots' },
+  ];
+
+  const colorOptions = [
+    { value: 'text-primary', label: 'Primary' },
+    { value: 'text-accent', label: 'Accent' },
+    { value: 'text-success', label: 'Success' },
+    { value: 'text-warning', label: 'Warning' },
+    { value: 'text-destructive', label: 'Destructive' },
+  ];
+
+  const showForm = showAdd || editItem;
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      {/* Item List */}
+      <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5 text-primary" /> Shop Items ({items.length})
+          </h2>
+          <Button size="sm" variant="glow" onClick={() => { setEditItem(null); resetForm(); setShowAdd(true); }}>
+            <Plus className="w-4 h-4 mr-1" /> Add Item
+          </Button>
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No shop items yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-[500px] overflow-auto">
+            {items.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-foreground text-sm truncate">{item.name}</p>
+                    {!item.active && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Disabled</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {item.price} coins → {item.display_amount} {item.resource}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(item)}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleToggle(item.id, item.active)}
+                    className={item.active ? 'text-success hover:text-success' : 'text-muted-foreground'}>
+                    {item.active ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(item.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Form */}
+      {showForm && (
+        <div className="bg-card rounded-xl border border-border p-6 card-shadow space-y-4">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            {editItem ? <><Pencil className="w-5 h-5 text-primary" /> Edit Item</> : <><Plus className="w-5 h-5 text-primary" /> New Item</>}
+          </h2>
+          <form onSubmit={handleSave} className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Name</Label>
+              <Input value={formName} onChange={(e) => setFormName(e.target.value)} className="bg-secondary border-border" required placeholder="512 MB RAM" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Description</Label>
+              <Input value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="bg-secondary border-border" placeholder="Extra memory for your servers" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Price (coins)</Label>
+                <Input type="number" value={formPrice} onChange={(e) => setFormPrice(e.target.value)} className="bg-secondary border-border" required placeholder="50" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Resource Type</Label>
+                <select value={formResource} onChange={(e) => setFormResource(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background">
+                  {resourceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Amount</Label>
+                <Input type="number" value={formAmount} onChange={(e) => setFormAmount(e.target.value)} className="bg-secondary border-border" required placeholder="512" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Display Amount</Label>
+                <Input value={formDisplay} onChange={(e) => setFormDisplay(e.target.value)} className="bg-secondary border-border" required placeholder="512 MB" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Icon</Label>
+                <select value={formIcon} onChange={(e) => setFormIcon(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background">
+                  {iconOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Color</Label>
+                <select value={formColor} onChange={(e) => setFormColor(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background">
+                  {colorOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Sort Order</Label>
+                <Input type="number" value={formOrder} onChange={(e) => setFormOrder(e.target.value)} className="bg-secondary border-border" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" variant="glow" className="flex-1">
+                <Save className="w-4 h-4 mr-2" /> {editItem ? 'Update' : 'Create'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setEditItem(null); setShowAdd(false); resetForm(); }}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
