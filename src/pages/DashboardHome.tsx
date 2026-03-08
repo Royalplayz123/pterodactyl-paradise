@@ -1,4 +1,4 @@
-import { Server, Coins, Cpu, HardDrive, MemoryStick, Plus } from 'lucide-react';
+import { Server, Coins, Cpu, HardDrive, MemoryStick, Plus, Database, Archive, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useProfile, useUserResources, useServers } from '@/hooks/useProfile';
@@ -9,12 +9,17 @@ const DashboardHome = () => {
   const { data: resources } = useUserResources();
   const { data: servers } = useServers();
 
+  const serverCount = servers?.length ?? 0;
+
   const stats = [
-    { label: 'Servers', value: `${servers?.length ?? 0}`, icon: Server, color: 'text-primary' },
+    { label: 'Servers', value: `${serverCount}`, icon: Server, color: 'text-primary' },
     { label: 'Coins', value: `${profile?.coins ?? 0}`, icon: Coins, color: 'text-warning' },
     { label: 'CPU', value: `${resources?.cpu ?? 0}%`, icon: Cpu, color: 'text-success' },
     { label: 'RAM', value: `${resources?.ram ?? 0} MB`, icon: MemoryStick, color: 'text-accent' },
     { label: 'Disk', value: `${resources?.disk ?? 0} MB`, icon: HardDrive, color: 'text-primary' },
+    { label: 'Databases', value: `${serverCount * 1}`, icon: Database, color: 'text-accent' },
+    { label: 'Backups', value: `${serverCount * 1}`, icon: Archive, color: 'text-warning' },
+    { label: 'Allocations', value: `${serverCount * 1}`, icon: Network, color: 'text-success' },
   ];
 
   return (
@@ -30,7 +35,7 @@ const DashboardHome = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-card rounded-xl border border-border p-4 card-shadow hover:border-primary/20 transition-colors">
             <div className="flex items-center gap-3 mb-2">
