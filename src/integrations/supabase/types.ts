@@ -252,8 +252,11 @@ export type Database = {
       }
       user_resources: {
         Row: {
+          allocations: number
+          backups: number
           cpu: number
           created_at: string
+          databases: number
           disk: number
           id: string
           ram: number
@@ -262,8 +265,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allocations?: number
+          backups?: number
           cpu?: number
           created_at?: string
+          databases?: number
           disk?: number
           id?: string
           ram?: number
@@ -272,8 +278,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allocations?: number
+          backups?: number
           cpu?: number
           created_at?: string
+          databases?: number
           disk?: number
           id?: string
           ram?: number
