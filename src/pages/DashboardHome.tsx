@@ -17,9 +17,9 @@ const DashboardHome = () => {
     { label: 'CPU', value: `${resources?.cpu ?? 0}%`, icon: Cpu, color: 'text-success' },
     { label: 'RAM', value: `${resources?.ram ?? 0} MB`, icon: MemoryStick, color: 'text-accent' },
     { label: 'Disk', value: `${resources?.disk ?? 0} MB`, icon: HardDrive, color: 'text-primary' },
-    { label: 'Databases', value: `${serverCount * 1}`, icon: Database, color: 'text-accent' },
-    { label: 'Backups', value: `${serverCount * 1}`, icon: Archive, color: 'text-warning' },
-    { label: 'Allocations', value: `${serverCount * 1}`, icon: Network, color: 'text-success' },
+    { label: 'Databases', value: `${(resources as any)?.databases ?? 0}`, icon: Database, color: 'text-accent' },
+    { label: 'Backups', value: `${(resources as any)?.backups ?? 0}`, icon: Archive, color: 'text-warning' },
+    { label: 'Allocations', value: `${(resources as any)?.allocations ?? 0}`, icon: Network, color: 'text-success' },
   ];
 
   return (
