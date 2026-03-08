@@ -7,7 +7,8 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Server, Plus, Play, Square, RotateCcw, Trash2, ExternalLink,
-  Cpu, MemoryStick, HardDrive, Edit, Skull, RefreshCw, Globe
+  Cpu, MemoryStick, HardDrive, Edit, Skull, RefreshCw, Globe,
+  Database, Archive, Network
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +36,9 @@ const ServersPage = () => {
   const [allocRam, setAllocRam] = useState(1024);
   const [allocCpu, setAllocCpu] = useState(100);
   const [allocDisk, setAllocDisk] = useState(5120);
+  const [allocDatabases, setAllocDatabases] = useState(1);
+  const [allocBackups, setAllocBackups] = useState(1);
+  const [allocAllocations, setAllocAllocations] = useState(1);
 
   // Edit dialog
   const [editDialog, setEditDialog] = useState(false);
@@ -62,6 +66,9 @@ const ServersPage = () => {
   const maxRam = resources?.ram || 1024;
   const maxCpu = resources?.cpu || 100;
   const maxDisk = resources?.disk || 5120;
+  const maxDatabases = (resources as any)?.databases || 1;
+  const maxBackups = (resources as any)?.backups || 1;
+  const maxAllocations = (resources as any)?.allocations || 1;
 
   const handleCreateServer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,6 +307,30 @@ const ServersPage = () => {
                     <Slider value={[allocDisk]} min={512} max={maxDisk} step={512}
                       onValueChange={([v]) => setAllocDisk(v)} className="w-full" />
                   </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground flex items-center gap-1"><Database className="w-3 h-3" /> Databases</span>
+                      <span className="text-foreground font-semibold">{allocDatabases} / {maxDatabases}</span>
+                    </div>
+                    <Slider value={[allocDatabases]} min={0} max={maxDatabases} step={1}
+                      onValueChange={([v]) => setAllocDatabases(v)} className="w-full" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground flex items-center gap-1"><Archive className="w-3 h-3" /> Backups</span>
+                      <span className="text-foreground font-semibold">{allocBackups} / {maxBackups}</span>
+                    </div>
+                    <Slider value={[allocBackups]} min={0} max={maxBackups} step={1}
+                      onValueChange={([v]) => setAllocBackups(v)} className="w-full" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground flex items-center gap-1"><Network className="w-3 h-3" /> Allocations</span>
+                      <span className="text-foreground font-semibold">{allocAllocations} / {maxAllocations}</span>
+                    </div>
+                    <Slider value={[allocAllocations]} min={1} max={maxAllocations} step={1}
+                      onValueChange={([v]) => setAllocAllocations(v)} className="w-full" />
+                  </div>
                 </div>
               </div>
 
@@ -312,7 +343,7 @@ const ServersPage = () => {
       </div>
 
       {/* Resource Bar */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-card rounded-xl border border-border p-4 card-shadow">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
             <MemoryStick className="w-3.5 h-3.5 text-accent" /> Available RAM
@@ -330,6 +361,24 @@ const ServersPage = () => {
             <HardDrive className="w-3.5 h-3.5 text-primary" /> Available Disk
           </div>
           <p className="text-lg font-bold text-foreground">{resources?.disk ?? 0} MB</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4 card-shadow">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+            <Database className="w-3.5 h-3.5 text-accent" /> Databases
+          </div>
+          <p className="text-lg font-bold text-foreground">{(resources as any)?.databases ?? 0}</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4 card-shadow">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+            <Archive className="w-3.5 h-3.5 text-warning" /> Backups
+          </div>
+          <p className="text-lg font-bold text-foreground">{(resources as any)?.backups ?? 0}</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4 card-shadow">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+            <Network className="w-3.5 h-3.5 text-success" /> Allocations
+          </div>
+          <p className="text-lg font-bold text-foreground">{(resources as any)?.allocations ?? 0}</p>
         </div>
       </div>
 

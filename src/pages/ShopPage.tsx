@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Coins, Cpu, HardDrive, MemoryStick, Server, Zap, Loader2 } from 'lucide-react';
+import { ShoppingCart, Coins, Cpu, HardDrive, MemoryStick, Server, Zap, Loader2, Database, Archive, Network } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,9 @@ const iconMap: Record<string, React.ElementType> = {
   'hard-drive': HardDrive,
   'server': Server,
   'zap': Zap,
+  'database': Database,
+  'archive': Archive,
+  'network': Network,
 };
 
 const useShopItems = () => {
