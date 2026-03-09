@@ -9,7 +9,7 @@ import {
   Shield, Users, Ticket, Plus, Trash2, AlertTriangle,
   Server, BarChart3, Settings, Ban, CheckCircle2, Search,
   Coins, MemoryStick, Cpu, HardDrive, Eye, UserPlus, ServerCrash,
-  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil, Palette
+  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil, Palette, Mail
 } from 'lucide-react';
 import { useAppSetting, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import {
   useDeletePteroServer, useDeletePteroUser, useCreatePteroUser
 } from '@/hooks/usePterodactyl';
 import BrandingSettings from '@/components/admin/BrandingSettings';
+import EmailSettings from '@/components/admin/EmailSettings';
 
 const AdminPage = () => {
   const isAdmin = useIsAdmin();
@@ -199,6 +200,9 @@ const AdminPage = () => {
           </TabsTrigger>
           <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <ShoppingCart className="w-4 h-4" /> Shop
+          </TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <Mail className="w-4 h-4" /> Email
           </TabsTrigger>
         </TabsList>
 
@@ -594,6 +598,11 @@ const AdminPage = () => {
         {/* ===== SHOP TAB ===== */}
         <TabsContent value="shop">
           <ShopManagementTab />
+        </TabsContent>
+
+        {/* ===== EMAIL TAB ===== */}
+        <TabsContent value="email">
+          <EmailSettings />
         </TabsContent>
       </Tabs>
     </div>

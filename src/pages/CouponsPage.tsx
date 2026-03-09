@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { sendNotification } from '@/lib/notifications';
 
 const CouponsPage = () => {
   const [couponCode, setCouponCode] = useState('');
@@ -98,6 +99,22 @@ const CouponsPage = () => {
 
       toast.success(`Coupon redeemed! You got: ${rewards.join(', ')}`);
       setCouponCode('');
+
+      // Send notification
+      const { data: userProfile } = await supabase.from('profiles').select('email').eq('id', user.id).single();
+      if (userProfile?.email) {
+        sendNotification({
+          type: 'coupon_claim',
+          email: userProfile.email,
+          data: {
+            code: coupon.code,
+            coins: coupon.coins_reward,
+            ram: coupon.ram_reward,
+            cpu: coupon.cpu_reward,
+            disk: coupon.disk_reward,
+          }
+        });
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

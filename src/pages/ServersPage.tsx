@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserResources, useServers } from '@/hooks/useProfile';
+import { useUserResources, useServers, useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,11 +20,13 @@ import {
   useCreatePteroServer, useDeletePteroServer, useServerPower,
   useUpdateServerBuild
 } from '@/hooks/usePterodactyl';
+import { sendNotification } from '@/lib/notifications';
 
 const ServersPage = () => {
   const { user } = useAuth();
   const { data: resources } = useUserResources();
   const { data: servers, refetch: refetchServers } = useServers();
+  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
 
   // Create dialog
@@ -124,6 +126,21 @@ const ServersPage = () => {
       queryClient.invalidateQueries({ queryKey: ['servers'] });
       queryClient.invalidateQueries({ queryKey: ['user_resources'] });
 
+      // Send notification
+      if (profile?.email) {
+        sendNotification({
+          type: 'server_create',
+          email: profile.email,
+          data: {
+            serverName,
+            serverType: eggList.find((e: any) => e.attributes.id === parseInt(selectedEgg))?.attributes?.name || 'Unknown',
+            ram: allocRam,
+            cpu: allocCpu,
+            disk: allocDisk,
+          }
+        });
+      }
+
       setDialogOpen(false);
       setServerName(''); setSelectedEgg(''); setSelectedNode(''); setSelectedNest('');
       setAllocRam(1024); setAllocCpu(100); setAllocDisk(5120);
@@ -150,6 +167,15 @@ const ServersPage = () => {
       queryClient.invalidateQueries({ queryKey: ['servers'] });
       queryClient.invalidateQueries({ queryKey: ['user_resources'] });
       toast.success('Server deleted and resources refunded!');
+      
+      // Send notification
+      if (profile?.email) {
+        sendNotification({
+          type: 'server_delete',
+          email: profile.email,
+          data: { serverName: server.name }
+        });
+      }
     } catch (err: any) {
       toast.error(err.message);
     }
