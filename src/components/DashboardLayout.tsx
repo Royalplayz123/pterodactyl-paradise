@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useIsAdmin } from '@/hooks/useProfile';
 import { useAdminSync } from '@/hooks/useAdminSync';
+import { useBranding } from '@/contexts/BrandingContext';
 import {
   Server, ShoppingCart, Ticket, Shield, LogOut,
   Home, Coins, User, Menu, X, RefreshCw, Zap
@@ -15,6 +16,7 @@ const DashboardLayout = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const isAdmin = useIsAdmin();
+  const { branding } = useBranding();
   const queryClient = useQueryClient();
   const { syncAdminStatus } = useAdminSync();
   const navigate = useNavigate();
@@ -24,9 +26,7 @@ const DashboardLayout = () => {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
-      // Sync admin status from panel
       await syncAdminStatus();
-      // Also refresh all dashboard data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['user_resources', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['servers', user?.id] });
@@ -53,8 +53,14 @@ const DashboardLayout = () => {
     navigate('/auth');
   };
 
+  const backgroundStyle = branding.backgroundImageUrl
+    ? { backgroundImage: `url(${branding.backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : branding.backgroundColor
+    ? { backgroundColor: branding.backgroundColor }
+    : {};
+
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" style={backgroundStyle}>
       {sidebarOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -62,10 +68,14 @@ const DashboardLayout = () => {
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Server className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-lg font-bold gradient-text">PteroDash</span>
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Server className="w-5 h-5 text-primary" />
+              </div>
+            )}
+            <span className="text-lg font-bold gradient-text">{branding.dashboardName}</span>
             <button className="ml-auto lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}>
               <X className="w-5 h-5" />
             </button>
@@ -109,7 +119,7 @@ const DashboardLayout = () => {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-border flex items-center px-4 lg:px-6 gap-4">
+        <header className="h-14 border-b border-border flex items-center px-4 lg:px-6 gap-4 bg-card/80 backdrop-blur-sm">
           <button className="lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>

@@ -9,7 +9,7 @@ import {
   Shield, Users, Ticket, Plus, Trash2, AlertTriangle,
   Server, BarChart3, Settings, Ban, CheckCircle2, Search,
   Coins, MemoryStick, Cpu, HardDrive, Eye, UserPlus, ServerCrash,
-  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil
+  Activity, TrendingUp, Globe, Zap, Save, ShoppingCart, Pencil, Palette
 } from 'lucide-react';
 import { useAppSetting, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
   usePteroServers, usePteroUsers, useSuspendServer, useUnsuspendServer,
   useDeletePteroServer, useDeletePteroUser, useCreatePteroUser
 } from '@/hooks/usePterodactyl';
+import BrandingSettings from '@/components/admin/BrandingSettings';
 
 const AdminPage = () => {
   const isAdmin = useIsAdmin();
@@ -192,6 +193,9 @@ const AdminPage = () => {
           </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <Settings className="w-4 h-4" /> Settings
+          </TabsTrigger>
+          <TabsTrigger value="branding" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <Palette className="w-4 h-4" /> Branding
           </TabsTrigger>
           <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <ShoppingCart className="w-4 h-4" /> Shop
@@ -580,6 +584,11 @@ const AdminPage = () => {
         {/* ===== SETTINGS TAB ===== */}
         <TabsContent value="settings">
           <SettingsTab />
+        </TabsContent>
+
+        {/* ===== BRANDING TAB ===== */}
+        <TabsContent value="branding">
+          <BrandingSettings />
         </TabsContent>
 
         {/* ===== SHOP TAB ===== */}
