@@ -48,6 +48,7 @@ const App = () => (
                 <Route path="coupons" element={<CouponsPage />} />
                 <Route path="admin" element={<AdminPage />} />
                 <Route path="afk" element={<AfkPage />} />
+                <Route path="account" element={<AccountPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
