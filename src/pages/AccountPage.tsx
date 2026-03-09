@@ -99,6 +99,29 @@ const AccountPage = () => {
     }
   };
 
+  const handleDisconnectDiscord = async () => {
+    setDisconnectingDiscord(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          discord_id: null,
+          discord_username: null
+        })
+        .eq('id', user!.id);
+
+      if (error) throw error;
+
+      toast.success('Discord account disconnected successfully');
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to disconnect Discord');
+    } finally {
+      setDisconnectingDiscord(false);
+    }
+  };
+
   const isDiscordConnected = !!profile?.discord_id;
 
   return (
