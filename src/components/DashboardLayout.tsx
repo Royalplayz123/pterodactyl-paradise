@@ -45,6 +45,7 @@ const DashboardLayout = () => {
     { to: '/dashboard/shop', icon: ShoppingCart, label: 'Shop', show: true },
     { to: '/dashboard/coupons', icon: Ticket, label: 'Coupons', show: true },
     { to: '/dashboard/afk', icon: Zap, label: 'AFK', show: true },
+    { to: '/dashboard/account', icon: User, label: 'Account', show: true },
     { to: '/dashboard/admin', icon: Shield, label: 'Admin', show: isAdmin },
   ];
 

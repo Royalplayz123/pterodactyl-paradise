@@ -16,6 +16,7 @@ import ShopPage from "@/pages/ShopPage";
 import CouponsPage from "@/pages/CouponsPage";
 import AdminPage from "@/pages/AdminPage";
 import AfkPage from "@/pages/AfkPage";
+import AccountPage from "@/pages/AccountPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="coupons" element={<CouponsPage />} />
                 <Route path="admin" element={<AdminPage />} />
                 <Route path="afk" element={<AfkPage />} />
+                <Route path="account" element={<AccountPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
