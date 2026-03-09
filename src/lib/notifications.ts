@@ -6,7 +6,8 @@ export type NotificationType =
   | 'server_create'
   | 'server_delete'
   | 'shop_purchase'
-  | 'coupon_claim';
+  | 'coupon_claim'
+  | 'password_reset';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -22,6 +23,7 @@ interface NotificationSettings {
   server_delete: boolean;
   shop_purchase: boolean;
   coupon_claim: boolean;
+  password_reset?: boolean;
 }
 
 interface SmtpConfig {
