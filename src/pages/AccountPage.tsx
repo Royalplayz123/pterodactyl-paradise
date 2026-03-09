@@ -20,6 +20,7 @@ const AccountPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetting, setResetting] = useState(false);
   const [linkingDiscord, setLinkingDiscord] = useState(false);
+  const [disconnectingDiscord, setDisconnectingDiscord] = useState(false);
 
   // Handle Discord link callback
   useEffect(() => {
