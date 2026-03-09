@@ -168,44 +168,52 @@ deploy_edge_functions() {
   print_step "Linking to Supabase project..."
   cd /opt/dashboard
 
-  # Login with service role approach
-  export SUPABASE_ACCESS_TOKEN=""
-
-  print_warn "You need to create a Supabase access token."
+  # Get Supabase Access Token
+  print_warn "You need a Supabase Access Token to deploy edge functions."
   echo "  1. Go to: https://supabase.com/dashboard/account/tokens"
   echo "  2. Click 'Generate new token'"
   echo "  3. Copy and paste it below"
   echo ""
   read -p "Enter your Supabase Access Token: " SUPABASE_ACCESS_TOKEN
+  if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+    print_error "Access Token is required to deploy edge functions!"
+    print_warn "Skipping edge function deployment. Deploy manually later with: supabase functions deploy"
+    return 0
+  fi
   export SUPABASE_ACCESS_TOKEN
 
-  supabase link --project-ref "$SUPABASE_PROJECT_REF"
+  supabase link --project-ref "$SUPABASE_PROJECT_REF" || {
+    print_error "Failed to link Supabase project. Check your Access Token and Project Ref."
+    return 1
+  }
 
   print_step "Setting edge function secrets..."
-  SECRETS_CMD="supabase secrets set"
-  SECRETS_CMD="$SECRETS_CMD SUPABASE_URL=$SUPABASE_URL"
-  SECRETS_CMD="$SECRETS_CMD SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
-  SECRETS_CMD="$SECRETS_CMD SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_KEY"
-  SECRETS_CMD="$SECRETS_CMD SUPABASE_PUBLISHABLE_KEY=$SUPABASE_ANON_KEY"
-  SECRETS_CMD="$SECRETS_CMD SUPABASE_DB_URL=postgresql://postgres:postgres@db.$SUPABASE_PROJECT_REF.supabase.co:5432/postgres"
+  supabase secrets set \
+    SUPABASE_URL="$SUPABASE_URL" \
+    SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+    SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_KEY" \
+    SUPABASE_PUBLISHABLE_KEY="$SUPABASE_ANON_KEY" \
+    ${PTERODACTYL_PANEL_URL:+PTERODACTYL_PANEL_URL="$PTERODACTYL_PANEL_URL"} \
+    ${PTERODACTYL_API_KEY:+PTERODACTYL_API_KEY="$PTERODACTYL_API_KEY"} \
+    ${DISCORD_CLIENT_ID:+DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID"} \
+    ${DISCORD_CLIENT_SECRET:+DISCORD_CLIENT_SECRET="$DISCORD_CLIENT_SECRET"} \
+    ${DISCORD_BOT_TOKEN:+DISCORD_BOT_TOKEN="$DISCORD_BOT_TOKEN"} \
+    ${DISCORD_SERVER_ID:+DISCORD_SERVER_ID="$DISCORD_SERVER_ID"} \
+    || print_warn "Some secrets may have failed to set"
 
-  [ -n "$PTERODACTYL_PANEL_URL" ] && SECRETS_CMD="$SECRETS_CMD PTERODACTYL_PANEL_URL=$PTERODACTYL_PANEL_URL"
-  [ -n "$PTERODACTYL_API_KEY" ] && SECRETS_CMD="$SECRETS_CMD PTERODACTYL_API_KEY=$PTERODACTYL_API_KEY"
-  [ -n "$DISCORD_CLIENT_ID" ] && SECRETS_CMD="$SECRETS_CMD DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID"
-  [ -n "$DISCORD_CLIENT_SECRET" ] && SECRETS_CMD="$SECRETS_CMD DISCORD_CLIENT_SECRET=$DISCORD_CLIENT_SECRET"
-  [ -n "$DISCORD_BOT_TOKEN" ] && SECRETS_CMD="$SECRETS_CMD DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN"
-  [ -n "$DISCORD_SERVER_ID" ] && SECRETS_CMD="$SECRETS_CMD DISCORD_SERVER_ID=$DISCORD_SERVER_ID"
-
-  eval $SECRETS_CMD
+  # Ask for DB password (not always default)
+  read -p "Enter your Supabase database password (default: postgres): " DB_PASSWORD
+  DB_PASSWORD="${DB_PASSWORD:-postgres}"
+  supabase secrets set SUPABASE_DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" \
+    || print_warn "Failed to set DB URL secret"
 
   print_step "Deploying edge functions..."
   # Remove deno.lock if it exists (can cause deploy issues)
   rm -f supabase/functions/deno.lock deno.lock
 
   # Ensure config.toml has all functions with verify_jwt = false
-  print_step "Configuring edge function settings..."
   FUNCTIONS=("afk-claim" "discord-auth" "discord-link" "password-reset" "pterodactyl-api" "send-email")
-  
+
   for func in "${FUNCTIONS[@]}"; do
     if ! grep -q "\[functions.${func}\]" supabase/config.toml 2>/dev/null; then
       echo "" >> supabase/config.toml
@@ -214,18 +222,24 @@ deploy_edge_functions() {
     fi
   done
 
+  DEPLOY_FAILED=0
   for func in "${FUNCTIONS[@]}"; do
     echo -e "  Deploying ${CYAN}$func${NC}..."
     if supabase functions deploy "$func" --no-verify-jwt 2>&1; then
-      echo -e "  ${GREEN}✓ $func deployed${NC}"
+      echo -e "  ${GREEN}✓ $func deployed successfully${NC}"
+    elif supabase functions deploy "$func" 2>&1; then
+      echo -e "  ${GREEN}✓ $func deployed (without --no-verify-jwt flag)${NC}"
     else
-      print_warn "Failed to deploy $func - retrying without --no-verify-jwt..."
-      supabase functions deploy "$func" 2>&1 || \
-      print_warn "Failed to deploy $func - deploy manually: supabase functions deploy $func"
+      print_warn "✗ Failed to deploy $func"
+      DEPLOY_FAILED=$((DEPLOY_FAILED + 1))
     fi
   done
 
-  print_step "Edge functions deployed!"
+  if [ "$DEPLOY_FAILED" -gt 0 ]; then
+    print_warn "$DEPLOY_FAILED function(s) failed to deploy. Deploy manually: supabase functions deploy <name>"
+  else
+    print_step "All edge functions deployed successfully!"
+  fi
 }
 
 # ============================================
@@ -360,76 +374,38 @@ setup_storage() {
   print_step "Setting up storage buckets..."
   cd /opt/dashboard
 
-  # Create branding bucket (public)
+  # Create branding bucket (public) using SQL pipe method (compatible with all CLI versions)
   print_step "Creating 'branding' storage bucket..."
-  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
-    INSERT INTO storage.buckets (id, name, public)
-    VALUES ('branding', 'branding', true)
-    ON CONFLICT (id) DO UPDATE SET public = true;
-  " 2>/dev/null || print_warn "Branding bucket may already exist"
+  echo "INSERT INTO storage.buckets (id, name, public) VALUES ('branding', 'branding', true) ON CONFLICT (id) DO UPDATE SET public = true;" \
+    | supabase db execute --project-ref "$SUPABASE_PROJECT_REF" 2>/dev/null \
+    || print_warn "Branding bucket may already exist or CLI version mismatch — create it manually in the Supabase dashboard if needed"
 
-  # RLS: Allow public read access
-  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+  # RLS policies
+  print_step "Setting up storage RLS policies..."
+
+  echo "
     DO \$\$
     BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE policyname = 'Public read access for branding' AND tablename = 'objects'
-      ) THEN
-        CREATE POLICY \"Public read access for branding\"
-        ON storage.objects FOR SELECT
-        USING (bucket_id = 'branding');
+      -- Public read
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read access for branding' AND tablename = 'objects') THEN
+        CREATE POLICY \"Public read access for branding\" ON storage.objects FOR SELECT USING (bucket_id = 'branding');
+      END IF;
+      -- Authenticated upload
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload branding' AND tablename = 'objects') THEN
+        CREATE POLICY \"Authenticated users can upload branding\" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'branding');
+      END IF;
+      -- Authenticated update
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can update branding' AND tablename = 'objects') THEN
+        CREATE POLICY \"Authenticated users can update branding\" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'branding');
+      END IF;
+      -- Authenticated delete
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can delete branding' AND tablename = 'objects') THEN
+        CREATE POLICY \"Authenticated users can delete branding\" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'branding');
       END IF;
     END
     \$\$;
-  " 2>/dev/null || print_warn "Read policy may already exist"
-
-  # RLS: Allow authenticated users to upload
-  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
-    DO \$\$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload branding' AND tablename = 'objects'
-      ) THEN
-        CREATE POLICY \"Authenticated users can upload branding\"
-        ON storage.objects FOR INSERT
-        TO authenticated
-        WITH CHECK (bucket_id = 'branding');
-      END IF;
-    END
-    \$\$;
-  " 2>/dev/null || print_warn "Upload policy may already exist"
-
-  # RLS: Allow authenticated users to update
-  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
-    DO \$\$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can update branding' AND tablename = 'objects'
-      ) THEN
-        CREATE POLICY \"Authenticated users can update branding\"
-        ON storage.objects FOR UPDATE
-        TO authenticated
-        USING (bucket_id = 'branding');
-      END IF;
-    END
-    \$\$;
-  " 2>/dev/null || print_warn "Update policy may already exist"
-
-  # RLS: Allow authenticated users to delete
-  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
-    DO \$\$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can delete branding' AND tablename = 'objects'
-      ) THEN
-        CREATE POLICY \"Authenticated users can delete branding\"
-        ON storage.objects FOR DELETE
-        TO authenticated
-        USING (bucket_id = 'branding');
-      END IF;
-    END
-    \$\$;
-  " 2>/dev/null || print_warn "Delete policy may already exist"
+  " | supabase db execute --project-ref "$SUPABASE_PROJECT_REF" 2>/dev/null \
+    || print_warn "Storage policies may already exist or need manual setup"
 
   print_step "Storage buckets configured!"
 }
