@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserResources, useServers } from '@/hooks/useProfile';
+import { useUserResources, useServers, useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,6 +20,7 @@ import {
   useCreatePteroServer, useDeletePteroServer, useServerPower,
   useUpdateServerBuild
 } from '@/hooks/usePterodactyl';
+import { sendNotification } from '@/lib/notifications';
 
 const ServersPage = () => {
   const { user } = useAuth();
