@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Server, Chrome } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+import { useBranding } from '@/contexts/BrandingContext';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { branding } = useBranding();
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true });
@@ -24,7 +27,6 @@ const AuthPage = () => {
 
   const syncWithPanel = async () => {
     try {
-      // Sync admin status from Pterodactyl panel
       await supabase.functions.invoke('pterodactyl-api', {
         body: { action: 'sync_admin_status' },
       });
@@ -33,13 +35,13 @@ const AuthPage = () => {
     }
   };
 
-  const registerOnPanel = async (userEmail: string, userPassword: string) => {
+  const registerOnPanel = async (userEmail: string, userPassword: string, userUsername: string) => {
     try {
       await supabase.functions.invoke('pterodactyl-api', {
         body: {
           action: 'register_panel_user',
           email: userEmail,
-          username: userEmail.split('@')[0],
+          username: userUsername,
           password: userPassword,
         },
       });
@@ -50,6 +52,18 @@ const AuthPage = () => {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isLogin) {
+      if (!username.trim()) {
+        toast.error('Please enter a username');
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
       if (isLogin) {
@@ -61,12 +75,14 @@ const AuthPage = () => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { 
+            emailRedirectTo: window.location.origin,
+            data: { username }
+          },
         });
         if (error) throw error;
         if (data.session) {
-          // Auto-confirmed: register on panel and sync
-          await registerOnPanel(email, password);
+          await registerOnPanel(email, password, username);
           await syncWithPanel();
           navigate('/dashboard');
         } else {
@@ -86,13 +102,11 @@ const AuthPage = () => {
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: window.location.origin,
       });
-      // If redirected, the page will navigate away — nothing more to do
       if (result?.redirected) return;
       if (result?.error) {
         toast.error(result.error.message || 'Google login failed');
         return;
       }
-      // If we got tokens set directly (no redirect), sync and navigate
       await syncWithPanel();
       navigate('/dashboard');
     } catch (err: any) {
@@ -102,8 +116,14 @@ const AuthPage = () => {
     }
   };
 
+  const backgroundStyle = branding.backgroundImageUrl
+    ? { backgroundImage: `url(${branding.backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : branding.backgroundColor
+    ? { backgroundColor: branding.backgroundColor }
+    : {};
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4" style={backgroundStyle}>
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
@@ -112,10 +132,14 @@ const AuthPage = () => {
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center glow-effect">
-              <Server className="w-6 h-6 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold gradient-text">PteroDash</h1>
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt="Logo" className="w-12 h-12 rounded-xl object-contain" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center glow-effect">
+                <Server className="w-6 h-6 text-primary" />
+              </div>
+            )}
+            <h1 className="text-3xl font-bold gradient-text">{branding.dashboardName}</h1>
           </div>
           <p className="text-muted-foreground">
             {isLogin ? 'Welcome back! Sign in to your account.' : 'Create a new account to get started.'}
@@ -144,6 +168,20 @@ const AuthPage = () => {
           </div>
 
           <form onSubmit={handleEmailAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="johndoe"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required={!isLogin}
+                  className="bg-secondary border-border focus:border-primary"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -169,6 +207,28 @@ const AuthPage = () => {
                 className="bg-secondary border-border focus:border-primary"
               />
             </div>
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required={!isLogin}
+                  minLength={6}
+                  className="bg-secondary border-border focus:border-primary"
+                />
+              </div>
+            )}
+            {isLogin && (
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
             <Button type="submit" className="w-full" variant="glow" disabled={loading}>
               {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
             </Button>
