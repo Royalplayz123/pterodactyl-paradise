@@ -599,6 +599,11 @@ const AdminPage = () => {
         <TabsContent value="shop">
           <ShopManagementTab />
         </TabsContent>
+
+        {/* ===== EMAIL TAB ===== */}
+        <TabsContent value="email">
+          <EmailSettings />
+        </TabsContent>
       </Tabs>
     </div>
   );
