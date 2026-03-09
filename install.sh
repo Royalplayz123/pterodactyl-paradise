@@ -202,12 +202,27 @@ deploy_edge_functions() {
   # Remove deno.lock if it exists (can cause deploy issues)
   rm -f supabase/functions/deno.lock deno.lock
 
+  # Ensure config.toml has all functions with verify_jwt = false
+  print_step "Configuring edge function settings..."
   FUNCTIONS=("afk-claim" "discord-auth" "discord-link" "password-reset" "pterodactyl-api" "send-email")
+  
+  for func in "${FUNCTIONS[@]}"; do
+    if ! grep -q "\[functions.${func}\]" supabase/config.toml 2>/dev/null; then
+      echo "" >> supabase/config.toml
+      echo "[functions.${func}]" >> supabase/config.toml
+      echo "verify_jwt = false" >> supabase/config.toml
+    fi
+  done
+
   for func in "${FUNCTIONS[@]}"; do
     echo -e "  Deploying ${CYAN}$func${NC}..."
-    supabase functions deploy "$func" --no-verify-jwt 2>/dev/null || \
-    supabase functions deploy "$func" 2>/dev/null || \
-    print_warn "Failed to deploy $func - you may need to deploy it manually"
+    if supabase functions deploy "$func" --no-verify-jwt 2>&1; then
+      echo -e "  ${GREEN}✓ $func deployed${NC}"
+    else
+      print_warn "Failed to deploy $func - retrying without --no-verify-jwt..."
+      supabase functions deploy "$func" 2>&1 || \
+      print_warn "Failed to deploy $func - deploy manually: supabase functions deploy $func"
+    fi
   done
 
   print_step "Edge functions deployed!"
