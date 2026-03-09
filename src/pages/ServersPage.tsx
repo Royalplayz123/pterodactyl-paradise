@@ -26,6 +26,7 @@ const ServersPage = () => {
   const { user } = useAuth();
   const { data: resources } = useUserResources();
   const { data: servers, refetch: refetchServers } = useServers();
+  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
 
   // Create dialog
