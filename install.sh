@@ -339,6 +339,87 @@ run_migrations() {
 }
 
 # ============================================
+# SETUP STORAGE BUCKETS
+# ============================================
+setup_storage() {
+  print_step "Setting up storage buckets..."
+  cd /opt/dashboard
+
+  # Create branding bucket (public)
+  print_step "Creating 'branding' storage bucket..."
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    INSERT INTO storage.buckets (id, name, public)
+    VALUES ('branding', 'branding', true)
+    ON CONFLICT (id) DO UPDATE SET public = true;
+  " 2>/dev/null || print_warn "Branding bucket may already exist"
+
+  # RLS: Allow public read access
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public read access for branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Public read access for branding\"
+        ON storage.objects FOR SELECT
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Read policy may already exist"
+
+  # RLS: Allow authenticated users to upload
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can upload branding\"
+        ON storage.objects FOR INSERT
+        TO authenticated
+        WITH CHECK (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Upload policy may already exist"
+
+  # RLS: Allow authenticated users to update
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can update branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can update branding\"
+        ON storage.objects FOR UPDATE
+        TO authenticated
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Update policy may already exist"
+
+  # RLS: Allow authenticated users to delete
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can delete branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can delete branding\"
+        ON storage.objects FOR DELETE
+        TO authenticated
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Delete policy may already exist"
+
+  print_step "Storage buckets configured!"
+}
+
+# ============================================
 # PRINT COMPLETION
 # ============================================
 print_complete() {
