@@ -129,6 +129,31 @@ const AuthPage = () => {
     }
   };
 
+  const handleDiscordLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await supabase.functions.invoke('discord-auth', {
+        body: {
+          frontend_redirect: window.location.origin + '/dashboard',
+          redirect_uri: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discord-auth/callback`
+        }
+      });
+      
+      if (response.error) {
+        toast.error(response.error.message || 'Discord login failed');
+        return;
+      }
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Discord login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const backgroundStyle = branding.backgroundImageUrl
     ? { backgroundImage: `url(${branding.backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : branding.backgroundColor
