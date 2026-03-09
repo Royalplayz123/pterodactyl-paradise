@@ -664,6 +664,18 @@ const SettingsTab = () => {
             <Label className="text-xs">Server Slots</Label>
             <Input type="number" value={res.server_slots} onChange={(e) => setRes({ ...res, server_slots: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Databases</Label>
+            <Input type="number" value={res.databases} onChange={(e) => setRes({ ...res, databases: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Backups</Label>
+            <Input type="number" value={res.backups} onChange={(e) => setRes({ ...res, backups: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Allocations</Label>
+            <Input type="number" value={res.allocations} onChange={(e) => setRes({ ...res, allocations: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
         </div>
         <Button variant="glow" className="w-full" onClick={saveResources} disabled={updateSetting.isPending}>
           <Save className="w-4 h-4 mr-2" /> Save Default Resources
