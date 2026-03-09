@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Server, Chrome } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
+import { sendNotification } from '@/lib/notifications';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
