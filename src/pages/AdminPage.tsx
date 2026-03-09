@@ -194,6 +194,9 @@ const AdminPage = () => {
           <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <Settings className="w-4 h-4" /> Settings
           </TabsTrigger>
+          <TabsTrigger value="branding" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <Palette className="w-4 h-4" /> Branding
+          </TabsTrigger>
           <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <ShoppingCart className="w-4 h-4" /> Shop
           </TabsTrigger>
