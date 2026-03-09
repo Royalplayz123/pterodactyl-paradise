@@ -806,6 +806,9 @@ const ShopManagementTab = () => {
     { value: 'hard-drive', label: 'Disk' },
     { value: 'server', label: 'Server' },
     { value: 'zap', label: 'Zap' },
+    { value: 'database', label: 'Database' },
+    { value: 'archive', label: 'Backup' },
+    { value: 'network', label: 'Allocation' },
   ];
 
   const resourceOptions = [
@@ -813,6 +816,9 @@ const ShopManagementTab = () => {
     { value: 'cpu', label: 'CPU' },
     { value: 'disk', label: 'Disk' },
     { value: 'server_slots', label: 'Server Slots' },
+    { value: 'databases', label: 'Databases' },
+    { value: 'backups', label: 'Backups' },
+    { value: 'allocations', label: 'Allocations' },
   ];
 
   const colorOptions = [
