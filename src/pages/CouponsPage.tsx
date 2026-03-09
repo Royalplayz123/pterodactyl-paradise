@@ -101,11 +101,11 @@ const CouponsPage = () => {
       setCouponCode('');
 
       // Send notification
-      const { data: profile } = await supabase.from('profiles').select('email').eq('id', user.id).single();
-      if (profile?.email) {
+      const { data: userProfile } = await supabase.from('profiles').select('email').eq('id', user.id).single();
+      if (userProfile?.email) {
         sendNotification({
           type: 'coupon_claim',
-          email: profile.email,
+          email: userProfile.email,
           data: {
             code: coupon.code,
             coins: coupon.coins_reward,

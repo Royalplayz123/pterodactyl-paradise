@@ -68,9 +68,15 @@ const AuthPage = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         await syncWithPanel();
+        // Send login notification
+        sendNotification({
+          type: 'login',
+          email,
+          data: { username: authData.user?.user_metadata?.username || email.split('@')[0] }
+        });
         navigate('/dashboard');
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -85,6 +91,12 @@ const AuthPage = () => {
         if (data.session) {
           await registerOnPanel(email, password, username);
           await syncWithPanel();
+          // Send welcome notification
+          sendNotification({
+            type: 'new_user',
+            email,
+            data: { username, email }
+          });
           navigate('/dashboard');
         } else {
           toast.success('Check your email for the confirmation link!');
