@@ -144,19 +144,11 @@ Deno.serve(async (req) => {
             .eq('id', existingUser.id);
         }
 
-        // Use the magic link token to create a session
-        const token = data.properties?.hashed_token;
-        
-        // Redirect with the magic link token
-        return new Response(`
-          <html>
-            <body>
-              <script>
-                window.location.href = '${data.properties?.action_link}';
-              </script>
-            </body>
-          </html>
-        `, { headers: { 'Content-Type': 'text/html' } });
+        // Use HTTP redirect for the magic link
+        return new Response(null, {
+          status: 302,
+          headers: { 'Location': data.properties?.action_link || frontendRedirect }
+        });
 
       } else {
         // Create new user
