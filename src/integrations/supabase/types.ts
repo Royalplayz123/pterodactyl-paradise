@@ -138,6 +138,8 @@ export type Database = {
           avatar_url: string | null
           coins: number
           created_at: string
+          discord_id: string | null
+          discord_username: string | null
           email: string | null
           id: string
           pterodactyl_id: number | null
@@ -148,6 +150,8 @@ export type Database = {
           avatar_url?: string | null
           coins?: number
           created_at?: string
+          discord_id?: string | null
+          discord_username?: string | null
           email?: string | null
           id: string
           pterodactyl_id?: number | null
@@ -158,6 +162,8 @@ export type Database = {
           avatar_url?: string | null
           coins?: number
           created_at?: string
+          discord_id?: string | null
+          discord_username?: string | null
           email?: string | null
           id?: string
           pterodactyl_id?: number | null
