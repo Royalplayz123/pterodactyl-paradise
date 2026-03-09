@@ -18,14 +18,22 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Use custom SMTP password reset
+      const { data, error } = await supabase.functions.invoke('password-reset', {
+        body: {
+          action: 'request_reset',
+          email,
+          site_url: window.location.origin,
+        },
       });
+
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
       setSent(true);
       toast.success('Password reset email sent!');
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
