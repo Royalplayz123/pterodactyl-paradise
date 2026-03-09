@@ -201,6 +201,9 @@ const AdminPage = () => {
           <TabsTrigger value="shop" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
             <ShoppingCart className="w-4 h-4" /> Shop
           </TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary gap-1.5">
+            <Mail className="w-4 h-4" /> Email
+          </TabsTrigger>
         </TabsList>
 
         {/* ===== ANALYTICS TAB ===== */}

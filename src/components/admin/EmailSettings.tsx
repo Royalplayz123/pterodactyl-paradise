@@ -306,7 +306,7 @@ const EmailSettings = () => {
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
               <div className="flex items-center gap-3">
-                <Ticket className="w-5 h-5 text-purple-500" />
+                <Ticket className="w-5 h-5 text-accent" />
                 <div>
                   <p className="font-medium text-foreground">Coupon Claim</p>
                   <p className="text-sm text-muted-foreground">Notify when coupons are claimed</p>

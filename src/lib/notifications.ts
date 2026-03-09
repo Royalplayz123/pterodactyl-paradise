@@ -196,7 +196,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
       .eq('key', 'notification_settings')
       .single();
 
-    const settings = notifData?.value as NotificationSettings | null;
+    const settings = notifData?.value as unknown as NotificationSettings | null;
     
     if (!settings?.enabled || !settings[payload.type]) {
       console.log(`Notification ${payload.type} is disabled`);
@@ -210,7 +210,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
       .eq('key', 'smtp_config')
       .single();
 
-    const smtpConfig = smtpData?.value as SmtpConfig | null;
+    const smtpConfig = smtpData?.value as unknown as SmtpConfig | null;
 
     if (!smtpConfig?.host || !smtpConfig?.username || !smtpConfig?.password) {
       console.log('SMTP not configured');
