@@ -180,15 +180,11 @@ Deno.serve(async (req) => {
           options: { redirectTo: frontendRedirect }
         });
 
-        return new Response(`
-          <html>
-            <body>
-              <script>
-                window.location.href = '${linkData?.properties?.action_link}';
-              </script>
-            </body>
-          </html>
-        `, { headers: { 'Content-Type': 'text/html' } });
+        // Use HTTP redirect for the magic link
+        return new Response(null, {
+          status: 302,
+          headers: { 'Location': linkData?.properties?.action_link || frontendRedirect }
+        });
       }
     }
 
