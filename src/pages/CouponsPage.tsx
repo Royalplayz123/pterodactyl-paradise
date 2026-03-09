@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { sendNotification } from '@/lib/notifications';
 
 const CouponsPage = () => {
   const [couponCode, setCouponCode] = useState('');
