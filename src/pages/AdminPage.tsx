@@ -586,6 +586,11 @@ const AdminPage = () => {
           <SettingsTab />
         </TabsContent>
 
+        {/* ===== BRANDING TAB ===== */}
+        <TabsContent value="branding">
+          <BrandingSettings />
+        </TabsContent>
+
         {/* ===== SHOP TAB ===== */}
         <TabsContent value="shop">
           <ShopManagementTab />
