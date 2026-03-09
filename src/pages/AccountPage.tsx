@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Key, Hash, Loader2, MessageCircle, CheckCircle, Link } from 'lucide-react';
+import { User, Mail, Key, Hash, Loader2, MessageCircle, CheckCircle, Link, Unlink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ const AccountPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetting, setResetting] = useState(false);
   const [linkingDiscord, setLinkingDiscord] = useState(false);
+  const [disconnectingDiscord, setDisconnectingDiscord] = useState(false);
 
   // Handle Discord link callback
   useEffect(() => {
@@ -98,6 +99,29 @@ const AccountPage = () => {
     }
   };
 
+  const handleDisconnectDiscord = async () => {
+    setDisconnectingDiscord(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          discord_id: null,
+          discord_username: null
+        })
+        .eq('id', user!.id);
+
+      if (error) throw error;
+
+      toast.success('Discord account disconnected successfully');
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to disconnect Discord');
+    } finally {
+      setDisconnectingDiscord(false);
+    }
+  };
+
   const isDiscordConnected = !!profile?.discord_id;
 
   return (
@@ -123,15 +147,30 @@ const AccountPage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {isDiscordConnected ? (
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary border border-border">
-              <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-[#5865F2]" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary border border-border">
+                <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-[#5865F2]" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{profile?.discord_username || 'Discord User'}</p>
+                  <p className="text-sm text-muted-foreground">ID: {profile?.discord_id}</p>
+                </div>
+                <CheckCircle className="w-5 h-5 text-green-500" />
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{profile?.discord_username || 'Discord User'}</p>
-                <p className="text-sm text-muted-foreground">ID: {profile?.discord_id}</p>
-              </div>
-              <CheckCircle className="w-5 h-5 text-green-500" />
+              <Button 
+                onClick={handleDisconnectDiscord}
+                disabled={disconnectingDiscord}
+                variant="destructive"
+                className="w-full gap-2"
+              >
+                {disconnectingDiscord ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Unlink className="w-4 h-4" />
+                )}
+                {disconnectingDiscord ? 'Disconnecting...' : 'Disconnect Discord'}
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
