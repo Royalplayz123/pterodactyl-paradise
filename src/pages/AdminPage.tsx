@@ -21,6 +21,7 @@ import {
   useDeletePteroServer, useDeletePteroUser, useCreatePteroUser
 } from '@/hooks/usePterodactyl';
 import BrandingSettings from '@/components/admin/BrandingSettings';
+import EmailSettings from '@/components/admin/EmailSettings';
 
 const AdminPage = () => {
   const isAdmin = useIsAdmin();
