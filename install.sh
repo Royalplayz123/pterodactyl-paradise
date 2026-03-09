@@ -482,6 +482,7 @@ main() {
   configure_nginx
   deploy_edge_functions
   run_migrations
+  setup_storage
   setup_ssl
   create_update_script
   print_complete
