@@ -126,6 +126,21 @@ const ServersPage = () => {
       queryClient.invalidateQueries({ queryKey: ['servers'] });
       queryClient.invalidateQueries({ queryKey: ['user_resources'] });
 
+      // Send notification
+      if (profile?.email) {
+        sendNotification({
+          type: 'server_create',
+          email: profile.email,
+          data: {
+            serverName,
+            serverType: eggList.find((e: any) => e.attributes.id === parseInt(selectedEgg))?.attributes?.name || 'Unknown',
+            ram: allocRam,
+            cpu: allocCpu,
+            disk: allocDisk,
+          }
+        });
+      }
+
       setDialogOpen(false);
       setServerName(''); setSelectedEgg(''); setSelectedNode(''); setSelectedNest('');
       setAllocRam(1024); setAllocCpu(100); setAllocDisk(5120);
