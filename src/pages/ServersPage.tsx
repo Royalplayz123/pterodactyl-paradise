@@ -354,8 +354,12 @@ const ServersPage = () => {
                       <span className="text-muted-foreground flex items-center gap-1"><Network className="w-3 h-3" /> Allocations</span>
                       <span className="text-foreground font-semibold">{allocAllocations} / {maxAllocations}</span>
                     </div>
-                    <Slider value={[allocAllocations]} min={1} max={maxAllocations} step={1}
-                      onValueChange={([v]) => setAllocAllocations(v)} className="w-full" />
+                    {maxAllocations > 1 ? (
+                      <Slider value={[allocAllocations]} min={1} max={maxAllocations} step={1}
+                        onValueChange={([v]) => setAllocAllocations(v)} className="w-full" />
+                    ) : (
+                      <div className="h-2 bg-primary rounded-full" />
+                    )}
                   </div>
                 </div>
               </div>
