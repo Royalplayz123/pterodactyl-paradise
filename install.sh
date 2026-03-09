@@ -127,9 +127,20 @@ install_dependencies() {
   # Install Supabase CLI
   if ! command -v supabase &> /dev/null; then
     print_step "Installing Supabase CLI..."
-    npm install -g supabase@latest
+    # Use official binary — npm global install is no longer supported
+    ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
+    curl -fsSL "https://github.com/supabase/cli/releases/latest/download/supabase_linux_${ARCH}.deb" -o /tmp/supabase.deb \
+      && dpkg -i /tmp/supabase.deb \
+      && rm -f /tmp/supabase.deb \
+      || { print_error "Failed to install Supabase CLI via .deb. Trying npx fallback..."; }
+    # Verify
+    if ! command -v supabase &> /dev/null; then
+      print_warn "Supabase CLI not found after install. Edge function deployment may fail."
+    else
+      print_step "Supabase CLI installed: $(supabase --version)"
+    fi
   else
-    print_step "Supabase CLI already installed"
+    print_step "Supabase CLI already installed: $(supabase --version)"
   fi
 
   # Install Certbot for SSL
