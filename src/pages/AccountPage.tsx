@@ -147,15 +147,30 @@ const AccountPage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {isDiscordConnected ? (
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary border border-border">
-              <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-[#5865F2]" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary border border-border">
+                <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-[#5865F2]" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{profile?.discord_username || 'Discord User'}</p>
+                  <p className="text-sm text-muted-foreground">ID: {profile?.discord_id}</p>
+                </div>
+                <CheckCircle className="w-5 h-5 text-green-500" />
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{profile?.discord_username || 'Discord User'}</p>
-                <p className="text-sm text-muted-foreground">ID: {profile?.discord_id}</p>
-              </div>
-              <CheckCircle className="w-5 h-5 text-green-500" />
+              <Button 
+                onClick={handleDisconnectDiscord}
+                disabled={disconnectingDiscord}
+                variant="destructive"
+                className="w-full gap-2"
+              >
+                {disconnectingDiscord ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Unlink className="w-4 h-4" />
+                )}
+                {disconnectingDiscord ? 'Disconnecting...' : 'Disconnect Discord'}
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
