@@ -190,9 +190,19 @@ const AuthPage = () => {
               variant="social"
               className="w-full h-11 gap-3"
               onClick={handleGoogleLogin}
+              disabled={loading}
             >
               <Chrome className="w-5 h-5" />
               Continue with Google
+            </Button>
+            <Button
+              variant="social"
+              className="w-full h-11 gap-3"
+              onClick={handleDiscordLogin}
+              disabled={loading}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Continue with Discord
             </Button>
           </div>
 
