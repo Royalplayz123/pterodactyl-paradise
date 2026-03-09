@@ -202,12 +202,27 @@ deploy_edge_functions() {
   # Remove deno.lock if it exists (can cause deploy issues)
   rm -f supabase/functions/deno.lock deno.lock
 
+  # Ensure config.toml has all functions with verify_jwt = false
+  print_step "Configuring edge function settings..."
   FUNCTIONS=("afk-claim" "discord-auth" "discord-link" "password-reset" "pterodactyl-api" "send-email")
+  
+  for func in "${FUNCTIONS[@]}"; do
+    if ! grep -q "\[functions.${func}\]" supabase/config.toml 2>/dev/null; then
+      echo "" >> supabase/config.toml
+      echo "[functions.${func}]" >> supabase/config.toml
+      echo "verify_jwt = false" >> supabase/config.toml
+    fi
+  done
+
   for func in "${FUNCTIONS[@]}"; do
     echo -e "  Deploying ${CYAN}$func${NC}..."
-    supabase functions deploy "$func" --no-verify-jwt 2>/dev/null || \
-    supabase functions deploy "$func" 2>/dev/null || \
-    print_warn "Failed to deploy $func - you may need to deploy it manually"
+    if supabase functions deploy "$func" --no-verify-jwt 2>&1; then
+      echo -e "  ${GREEN}✓ $func deployed${NC}"
+    else
+      print_warn "Failed to deploy $func - retrying without --no-verify-jwt..."
+      supabase functions deploy "$func" 2>&1 || \
+      print_warn "Failed to deploy $func - deploy manually: supabase functions deploy $func"
+    fi
   done
 
   print_step "Edge functions deployed!"
@@ -339,6 +354,87 @@ run_migrations() {
 }
 
 # ============================================
+# SETUP STORAGE BUCKETS
+# ============================================
+setup_storage() {
+  print_step "Setting up storage buckets..."
+  cd /opt/dashboard
+
+  # Create branding bucket (public)
+  print_step "Creating 'branding' storage bucket..."
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    INSERT INTO storage.buckets (id, name, public)
+    VALUES ('branding', 'branding', true)
+    ON CONFLICT (id) DO UPDATE SET public = true;
+  " 2>/dev/null || print_warn "Branding bucket may already exist"
+
+  # RLS: Allow public read access
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public read access for branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Public read access for branding\"
+        ON storage.objects FOR SELECT
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Read policy may already exist"
+
+  # RLS: Allow authenticated users to upload
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can upload branding\"
+        ON storage.objects FOR INSERT
+        TO authenticated
+        WITH CHECK (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Upload policy may already exist"
+
+  # RLS: Allow authenticated users to update
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can update branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can update branding\"
+        ON storage.objects FOR UPDATE
+        TO authenticated
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Update policy may already exist"
+
+  # RLS: Allow authenticated users to delete
+  supabase db execute --project-ref "$SUPABASE_PROJECT_REF" --sql "
+    DO \$\$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can delete branding' AND tablename = 'objects'
+      ) THEN
+        CREATE POLICY \"Authenticated users can delete branding\"
+        ON storage.objects FOR DELETE
+        TO authenticated
+        USING (bucket_id = 'branding');
+      END IF;
+    END
+    \$\$;
+  " 2>/dev/null || print_warn "Delete policy may already exist"
+
+  print_step "Storage buckets configured!"
+}
+
+# ============================================
 # PRINT COMPLETION
 # ============================================
 print_complete() {
@@ -386,6 +482,7 @@ main() {
   configure_nginx
   deploy_edge_functions
   run_migrations
+  setup_storage
   setup_ssl
   create_update_script
   print_complete
