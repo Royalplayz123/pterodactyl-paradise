@@ -127,12 +127,18 @@ install_dependencies() {
   # Install Supabase CLI
   if ! command -v supabase &> /dev/null; then
     print_step "Installing Supabase CLI..."
-    # Use official binary — npm global install is no longer supported
     ARCH=$(dpkg --print-architecture 2>/dev/null || echo "amd64")
-    curl -fsSL "https://github.com/supabase/cli/releases/latest/download/supabase_linux_${ARCH}.deb" -o /tmp/supabase.deb \
+    # Get latest version tag
+    SB_VERSION=$(curl -s https://api.github.com/repos/supabase/cli/releases/latest | grep '"tag_name"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [ -z "$SB_VERSION" ]; then
+      SB_VERSION="2.75.0"
+      print_warn "Could not detect latest version, using $SB_VERSION"
+    fi
+    print_step "Downloading Supabase CLI v${SB_VERSION} for ${ARCH}..."
+    curl -fsSL "https://github.com/supabase/cli/releases/download/v${SB_VERSION}/supabase_${SB_VERSION}_linux_${ARCH}.deb" -o /tmp/supabase.deb \
       && dpkg -i /tmp/supabase.deb \
       && rm -f /tmp/supabase.deb \
-      || { print_error "Failed to install Supabase CLI via .deb. Trying npx fallback..."; }
+      || print_error "Failed to install Supabase CLI"
     # Verify
     if ! command -v supabase &> /dev/null; then
       print_warn "Supabase CLI not found after install. Edge function deployment may fail."
