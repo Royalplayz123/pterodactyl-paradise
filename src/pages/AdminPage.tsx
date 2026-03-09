@@ -596,7 +596,7 @@ const SettingsTab = () => {
   const { data: afkConfig, isLoading: afkLoading } = useAppSetting('afk_rewards');
   const updateSetting = useUpdateAppSetting();
 
-  const [res, setRes] = useState({ coins: 100, ram: 1024, cpu: 100, disk: 5120, server_slots: 1 });
+  const [res, setRes] = useState({ coins: 100, ram: 1024, cpu: 100, disk: 5120, server_slots: 1, databases: 1, backups: 1, allocations: 1 });
   const [afk, setAfk] = useState({ enabled: true, coins_per_interval: 1, interval_seconds: 60 });
 
   useEffect(() => {
@@ -663,6 +663,18 @@ const SettingsTab = () => {
           <div className="space-y-1">
             <Label className="text-xs">Server Slots</Label>
             <Input type="number" value={res.server_slots} onChange={(e) => setRes({ ...res, server_slots: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Databases</Label>
+            <Input type="number" value={res.databases} onChange={(e) => setRes({ ...res, databases: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Backups</Label>
+            <Input type="number" value={res.backups} onChange={(e) => setRes({ ...res, backups: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Allocations</Label>
+            <Input type="number" value={res.allocations} onChange={(e) => setRes({ ...res, allocations: parseInt(e.target.value) || 0 })} className="bg-secondary border-border" />
           </div>
         </div>
         <Button variant="glow" className="w-full" onClick={saveResources} disabled={updateSetting.isPending}>
@@ -794,6 +806,9 @@ const ShopManagementTab = () => {
     { value: 'hard-drive', label: 'Disk' },
     { value: 'server', label: 'Server' },
     { value: 'zap', label: 'Zap' },
+    { value: 'database', label: 'Database' },
+    { value: 'archive', label: 'Backup' },
+    { value: 'network', label: 'Allocation' },
   ];
 
   const resourceOptions = [
@@ -801,6 +816,9 @@ const ShopManagementTab = () => {
     { value: 'cpu', label: 'CPU' },
     { value: 'disk', label: 'Disk' },
     { value: 'server_slots', label: 'Server Slots' },
+    { value: 'databases', label: 'Databases' },
+    { value: 'backups', label: 'Backups' },
+    { value: 'allocations', label: 'Allocations' },
   ];
 
   const colorOptions = [
