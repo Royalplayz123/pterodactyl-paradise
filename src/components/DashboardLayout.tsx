@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import DiscordConnectPopup from '@/components/DiscordConnectPopup';
 
 const DashboardLayout = () => {
   const { user, signOut } = useAuth();
@@ -22,6 +23,18 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [discordPopupOpen, setDiscordPopupOpen] = useState(false);
+
+  // Show Discord popup if not connected
+  useEffect(() => {
+    if (profile && !profile.discord_id) {
+      // Small delay to let dashboard load first
+      const timer = setTimeout(() => {
+        setDiscordPopupOpen(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [profile]);
 
   const handleManualSync = async () => {
     setSyncing(true);
@@ -147,6 +160,9 @@ const DashboardLayout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Discord Connect Popup */}
+      <DiscordConnectPopup open={discordPopupOpen} onOpenChange={setDiscordPopupOpen} />
     </div>
   );
 };
