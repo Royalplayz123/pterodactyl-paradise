@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Server, Chrome } from 'lucide-react';
+import { Server, Chrome, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { sendNotification } from '@/lib/notifications';
@@ -129,6 +129,31 @@ const AuthPage = () => {
     }
   };
 
+  const handleDiscordLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await supabase.functions.invoke('discord-auth', {
+        body: {
+          frontend_redirect: window.location.origin + '/dashboard',
+          redirect_uri: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discord-auth/callback`
+        }
+      });
+      
+      if (response.error) {
+        toast.error(response.error.message || 'Discord login failed');
+        return;
+      }
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Discord login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const backgroundStyle = branding.backgroundImageUrl
     ? { backgroundImage: `url(${branding.backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : branding.backgroundColor
@@ -165,9 +190,19 @@ const AuthPage = () => {
               variant="social"
               className="w-full h-11 gap-3"
               onClick={handleGoogleLogin}
+              disabled={loading}
             >
               <Chrome className="w-5 h-5" />
               Continue with Google
+            </Button>
+            <Button
+              variant="social"
+              className="w-full h-11 gap-3"
+              onClick={handleDiscordLogin}
+              disabled={loading}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Continue with Discord
             </Button>
           </div>
 
