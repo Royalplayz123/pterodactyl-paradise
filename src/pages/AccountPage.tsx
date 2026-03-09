@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { User, Mail, Key, Hash, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Key, Hash, Loader2, MessageCircle, CheckCircle, Link } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,37 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AccountPage = () => {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
+  const { data: profile, refetch } = useProfile();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [linkingDiscord, setLinkingDiscord] = useState(false);
+
+  // Handle Discord link callback
+  useEffect(() => {
+    const discordLinked = searchParams.get('discord_linked');
+    const discordError = searchParams.get('discord_error');
+    
+    if (discordLinked === 'true') {
+      toast.success('Discord account connected successfully!');
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refetch();
+      // Clear params
+      searchParams.delete('discord_linked');
+      setSearchParams(searchParams, { replace: true });
+    } else if (discordError) {
+      toast.error(`Discord connection failed: ${discordError}`);
+      searchParams.delete('discord_error');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, queryClient, refetch]);
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
@@ -44,12 +68,97 @@ const AccountPage = () => {
     }
   };
 
+  const handleConnectDiscord = async () => {
+    setLinkingDiscord(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast.error('Please log in first');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('discord-link', {
+        body: {
+          frontend_redirect: window.location.origin + '/dashboard/account'
+        }
+      });
+
+      if (response.error) {
+        toast.error(response.error.message || 'Failed to initiate Discord connection');
+        return;
+      }
+
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to connect Discord');
+    } finally {
+      setLinkingDiscord(false);
+    }
+  };
+
+  const isDiscordConnected = !!profile?.discord_id;
+
   return (
     <div className="space-y-6 animate-slide-up max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Account</h1>
         <p className="text-muted-foreground">Manage your account details</p>
       </div>
+
+      {/* Discord Connection */}
+      <Card className={isDiscordConnected ? 'border-green-500/50' : 'border-[#5865F2]/50'}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageCircle className={`w-5 h-5 ${isDiscordConnected ? 'text-green-500' : 'text-[#5865F2]'}`} />
+            Discord Connection
+            {isDiscordConnected && <CheckCircle className="w-4 h-4 text-green-500" />}
+          </CardTitle>
+          <CardDescription>
+            {isDiscordConnected 
+              ? 'Your Discord account is connected' 
+              : 'Connect your Discord account to create servers'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isDiscordConnected ? (
+            <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary border border-border">
+              <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-[#5865F2]" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground">{profile?.discord_username || 'Discord User'}</p>
+                <p className="text-sm text-muted-foreground">ID: {profile?.discord_id}</p>
+              </div>
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Why connect Discord?</p>
+                <ul className="space-y-1">
+                  <li>• Required to create game servers</li>
+                  <li>• Automatically join our community server</li>
+                  <li>• Get support and announcements</li>
+                </ul>
+              </div>
+              <Button 
+                onClick={handleConnectDiscord} 
+                disabled={linkingDiscord}
+                className="w-full gap-2 bg-[#5865F2] hover:bg-[#4752C4]"
+              >
+                {linkingDiscord ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Link className="w-4 h-4" />
+                )}
+                {linkingDiscord ? 'Connecting...' : 'Connect Discord Account'}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Profile Info */}
       <Card>

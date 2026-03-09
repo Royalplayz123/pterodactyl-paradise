@@ -74,6 +74,18 @@ const ServersPage = () => {
 
   const handleCreateServer = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check Discord connection first
+    if (!profile?.discord_id) {
+      toast.error('Please connect your Discord account first to create servers!', {
+        action: {
+          label: 'Connect Discord',
+          onClick: () => window.location.href = '/dashboard/account'
+        }
+      });
+      return;
+    }
+    
     if (!serverName.trim() || !selectedEgg || !selectedNode || !user) {
       toast.error('Please fill in all fields');
       return;
