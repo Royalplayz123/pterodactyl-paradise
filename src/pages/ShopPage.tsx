@@ -73,6 +73,15 @@ const ShopPage = () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['user_resources'] });
       toast.success(`Purchased ${item.name}!`);
+      
+      // Send notification
+      if (profile.email) {
+        sendNotification({
+          type: 'shop_purchase',
+          email: profile.email,
+          data: { itemName: item.name, price: item.price }
+        });
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

@@ -99,6 +99,22 @@ const CouponsPage = () => {
 
       toast.success(`Coupon redeemed! You got: ${rewards.join(', ')}`);
       setCouponCode('');
+
+      // Send notification
+      const { data: profile } = await supabase.from('profiles').select('email').eq('id', user.id).single();
+      if (profile?.email) {
+        sendNotification({
+          type: 'coupon_claim',
+          email: profile.email,
+          data: {
+            code: coupon.code,
+            coins: coupon.coins_reward,
+            ram: coupon.ram_reward,
+            cpu: coupon.cpu_reward,
+            disk: coupon.disk_reward,
+          }
+        });
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

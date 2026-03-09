@@ -167,6 +167,15 @@ const ServersPage = () => {
       queryClient.invalidateQueries({ queryKey: ['servers'] });
       queryClient.invalidateQueries({ queryKey: ['user_resources'] });
       toast.success('Server deleted and resources refunded!');
+      
+      // Send notification
+      if (profile?.email) {
+        sendNotification({
+          type: 'server_delete',
+          email: profile.email,
+          data: { serverName: server.name }
+        });
+      }
     } catch (err: any) {
       toast.error(err.message);
     }
