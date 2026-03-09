@@ -596,7 +596,7 @@ const SettingsTab = () => {
   const { data: afkConfig, isLoading: afkLoading } = useAppSetting('afk_rewards');
   const updateSetting = useUpdateAppSetting();
 
-  const [res, setRes] = useState({ coins: 100, ram: 1024, cpu: 100, disk: 5120, server_slots: 1 });
+  const [res, setRes] = useState({ coins: 100, ram: 1024, cpu: 100, disk: 5120, server_slots: 1, databases: 1, backups: 1, allocations: 1 });
   const [afk, setAfk] = useState({ enabled: true, coins_per_interval: 1, interval_seconds: 60 });
 
   useEffect(() => {
