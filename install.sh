@@ -124,12 +124,37 @@ install_dependencies() {
     print_step "Node.js already installed: $(node -v)"
   fi
 
-  # Install Supabase CLI
+  # Install Deno (required for edge functions)
+  if ! command -v deno &> /dev/null; then
+    print_step "Installing Deno..."
+    curl -fsSL https://deno.land/install.sh | sh
+    export DENO_INSTALL="/root/.deno"
+    export PATH="$DENO_INSTALL/bin:$PATH"
+    # Add to bashrc for persistence
+    echo 'export DENO_INSTALL="/root/.deno"' >> /root/.bashrc
+    echo 'export PATH="$DENO_INSTALL/bin:$PATH"' >> /root/.bashrc
+  else
+    print_step "Deno already installed: $(deno --version | head -1)"
+  fi
+
+  # Install Supabase CLI (binary method - npm is not supported)
   if ! command -v supabase &> /dev/null; then
     print_step "Installing Supabase CLI..."
-    npm install -g supabase@latest
+    ARCH=$(dpkg --print-architecture)
+    if [ "$ARCH" = "amd64" ]; then
+      SB_ARCH="linux-amd64"
+    elif [ "$ARCH" = "arm64" ]; then
+      SB_ARCH="linux-arm64"
+    else
+      print_error "Unsupported architecture: $ARCH"
+      exit 1
+    fi
+    SB_VERSION=$(curl -s https://api.github.com/repos/supabase/cli/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -fsSL "https://github.com/supabase/cli/releases/download/v${SB_VERSION}/supabase_${SB_VERSION}_${SB_ARCH}.deb" -o /tmp/supabase.deb
+    dpkg -i /tmp/supabase.deb
+    rm /tmp/supabase.deb
   else
-    print_step "Supabase CLI already installed"
+    print_step "Supabase CLI already installed: $(supabase --version)"
   fi
 
   # Install Certbot for SSL
