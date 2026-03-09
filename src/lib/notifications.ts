@@ -6,7 +6,8 @@ export type NotificationType =
   | 'server_create'
   | 'server_delete'
   | 'shop_purchase'
-  | 'coupon_claim';
+  | 'coupon_claim'
+  | 'password_reset';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -22,6 +23,7 @@ interface NotificationSettings {
   server_delete: boolean;
   shop_purchase: boolean;
   coupon_claim: boolean;
+  password_reset?: boolean;
 }
 
 interface SmtpConfig {
@@ -180,6 +182,39 @@ const emailTemplates: Record<NotificationType, (data: any) => { subject: string;
             ${data.ram ? `<p style="color: #374151; font-size: 14px; margin: 0;">+${data.ram}MB RAM</p>` : ''}
             ${data.cpu ? `<p style="color: #374151; font-size: 14px; margin: 0;">+${data.cpu}% CPU</p>` : ''}
             ${data.disk ? `<p style="color: #374151; font-size: 14px; margin: 0;">+${data.disk}MB Disk</p>` : ''}
+          </div>
+        </div>
+      </div>
+    `,
+  }),
+
+  password_reset: (data) => ({
+    subject: 'Reset Your Password',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">🔑 Password Reset</h1>
+        </div>
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+            Hello${data.username ? ` <strong>${data.username}</strong>` : ''},
+          </p>
+          <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+            We received a request to reset your password. Click the button below to set a new password:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.resetLink}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px;">
+            This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.
+          </p>
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              If the button doesn't work, copy and paste this link:<br/>
+              <a href="${data.resetLink}" style="color: #6366f1;">${data.resetLink}</a>
+            </p>
           </div>
         </div>
       </div>

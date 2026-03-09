@@ -3,9 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Server, Lock, CheckCircle2 } from 'lucide-react';
+import { Server, Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useBranding } from '@/contexts/BrandingContext';
 
 const ResetPasswordPage = () => {
@@ -13,38 +13,96 @@ const ResetPasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [validating, setValidating] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { branding } = useBranding();
 
+  const token = searchParams.get('token');
+
   useEffect(() => {
-    // Check if we have a recovery token in the URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    if (type !== 'recovery') {
+    const validateToken = async () => {
+      // Check for custom token first
+      if (token) {
+        try {
+          const { data, error } = await supabase.functions.invoke('password-reset', {
+            body: { action: 'verify_token', token },
+          });
+          
+          if (error || !data?.valid) {
+            toast.error('Invalid or expired reset link');
+            navigate('/forgot-password');
+            return;
+          }
+          
+          setTokenValid(true);
+        } catch (err) {
+          toast.error('Failed to validate reset link');
+          navigate('/forgot-password');
+        } finally {
+          setValidating(false);
+        }
+        return;
+      }
+
+      // Check for Supabase recovery token in hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+      
+      if (type === 'recovery') {
+        setTokenValid(true);
+        setValidating(false);
+        return;
+      }
+
+      // No valid token found
       toast.error('Invalid or expired reset link');
-      navigate('/auth');
-    }
-  }, [navigate]);
+      navigate('/forgot-password');
+    };
+
+    validateToken();
+  }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
+    
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
+    
     setLoading(true);
+    
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      if (token) {
+        // Use custom token reset
+        const { data, error } = await supabase.functions.invoke('password-reset', {
+          body: {
+            action: 'reset_password',
+            token,
+            new_password: password,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      } else {
+        // Use Supabase auth (for recovery links)
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+      }
+
       setSuccess(true);
       toast.success('Password updated successfully!');
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setTimeout(() => navigate('/auth'), 2000);
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }
@@ -55,6 +113,17 @@ const ResetPasswordPage = () => {
     : branding.backgroundColor
     ? { backgroundColor: branding.backgroundColor }
     : {};
+
+  if (validating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4" style={backgroundStyle}>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Validating reset link...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" style={backgroundStyle}>
@@ -85,7 +154,7 @@ const ResetPasswordPage = () => {
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
               <h2 className="text-xl font-semibold text-foreground">Password Updated!</h2>
-              <p className="text-muted-foreground text-sm">Redirecting to dashboard...</p>
+              <p className="text-muted-foreground text-sm">Redirecting to sign in...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

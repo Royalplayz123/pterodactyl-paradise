@@ -1,0 +1,2 @@
+-- Allow service role to manage tokens (edge functions)
+-- No user-facing policies needed as this is handled server-side
